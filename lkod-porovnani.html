@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKOD - Současný vs. Budoucí stav</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.3em;
+            opacity: 0.95;
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .column {
+            padding: 40px;
+            position: relative;
+        }
+
+        .column.current {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+            border-right: 3px solid #ddd;
+        }
+
+        .column.future {
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+        }
+
+        .column-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid;
+        }
+
+        .column.current .column-header {
+            border-bottom-color: #2193b0;
+        }
+
+        .column.future .column-header {
+            border-bottom-color: #ff9800;
+        }
+
+        .column-header h2 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .column.current .column-header h2 {
+            color: #2193b0;
+        }
+
+        .column.future .column-header h2 {
+            color: #ff9800;
+        }
+
+        .column-header .badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .column.current .badge {
+            background: #2193b0;
+            color: white;
+        }
+
+        .column.future .badge {
+            background: #ff9800;
+            color: white;
+        }
+
+        section {
+            margin-bottom: 50px;
+        }
+
+        h3 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .column.current h3 {
+            color: #2193b0;
+        }
+
+        .column.future h3 {
+            color: #ff9800;
+        }
+
+        /* Architektura */
+        .architecture-diagram {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .arch-level {
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .arch-level.superadmin {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            color: white;
+            position: relative;
+        }
+
+        .arch-level.superadmin::after {
+            content: "✨ NOVÉ";
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #28a745;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+
+        .arch-level.zrizovatel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .arch-level.organizace {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+            color: white;
+        }
+
+        .arch-level.nkod {
+            background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+            color: white;
+        }
+
+        .arch-level h4 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .arch-content {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .arch-item {
+            background: rgba(255,255,255,0.2);
+            padding: 12px 18px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            font-size: 0.95em;
+        }
+
+        .arrow-down {
+            text-align: center;
+            font-size: 2em;
+            color: #667eea;
+            margin: 5px 0;
+        }
+
+        /* Features list */
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+        }
+
+        .column.current .feature-list li {
+            border-left-color: #2193b0;
+        }
+
+        .column.future .feature-list li {
+            border-left-color: #ff9800;
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background: #28a745;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 25px;
+            margin-right: 15px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .feature-list li.new::before {
+            content: "★";
+            background: #ff9800;
+        }
+
+        /* Roles */
+        .roles-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .role-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            border-top: 4px solid;
+        }
+
+        .role-card.editor {
+            border-top-color: #56ab2f;
+        }
+
+        .role-card.admin {
+            border-top-color: #667eea;
+        }
+
+        .role-card.superadmin {
+            border-top-color: #ff6b6b;
+            position: relative;
+        }
+
+        .role-card.superadmin::after {
+            content: "✨ NOVÉ";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+
+        .role-card h4 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+
+        .role-card .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .role-card.editor .role-badge {
+            background: #56ab2f;
+        }
+
+        .role-card.admin .role-badge {
+            background: #667eea;
+        }
+
+        .role-card.superadmin .role-badge {
+            background: #ff6b6b;
+        }
+
+        .role-card ul {
+            margin-left: 20px;
+            margin-top: 10px;
+            font-size: 0.95em;
+            line-height: 1.8;
+        }
+
+        /* Katalog creation */
+        .catalog-creation {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+
+        .catalog-step {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border-left: 5px solid #ff9800;
+            position: relative;
+        }
+
+        .catalog-step h5 {
+            color: #ff9800;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .wysiwyg-preview {
+            background: white;
+            border: 2px dashed #ddd;
+            padding: 20px;
+            margin-top: 15px;
+            border-radius: 8px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe082 100%);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #ff9800;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+
+        .highlight-box strong {
+            color: #ff6b00;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .comparison-container {
+                grid-template-columns: 1fr;
+            }
+
+            .column.current {
+                border-right: none;
+                border-bottom: 3px solid #ddd;
+            }
+        }
+
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 30px;
+            grid-column: 1 / -1;
+        }
+
+        .screenshot-preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .screenshot-preview img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .screenshot-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .screenshot-item img {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .screenshot-item p {
+            font-size: 0.9em;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📘 LKOD - Rozvoj produktu</h1>
+            <p>Porovnání současného a budoucího stavu</p>
+        </header>
+
+        <div class="comparison-container">
+            <!-- SOUČASNÝ STAV -->
+            <div class="column current">
+                <div class="column-header">
+                    <h2>🔵 Současný stav</h2>
+                    <span class="badge">V produkci od 2023</span>
+                    <p style="margin-top: 15px; font-size: 1.1em;">Řešení pro HMP</p>
+                </div>
+
+                <!-- Architektura -->
+                <section>
+                    <h3>Architektura</h3>
+                    <div class="architecture-diagram">
+                        <div class="arch-level zrizovatel">
+                            <h4>🟦 Hlavní město Praha</h4>
+                            <div class="arch-content">
+                                <div class="arch-item">Správa organizací</div>
+                                <div class="arch-item">Správa uživatelů</div>
+                                <div class="arch-item">opendata.praha.eu</div>
+                            </div>
+                        </div>
+
+                        <div class="arrow-down">↓</div>
+
+                        <div class="arch-level organizace">
+                            <h4>🟩 Organizace města</h4>
+                            <div class="arch-content">
+                                <div class="arch-item">MHMP</div>
+                                <div class="arch-item">Praha 11</div>
+                                <div class="arch-item">IPR Praha</div>
+                                <div class="arch-item">OICT</div>
+                            </div>
+                        </div>
+
+                        <div class="arrow-down">↓</div>
+
+                        <div class="arch-level nkod">
+                            <h4>📘 NKOD - Samostatné registrace</h4>
+                            <div class="arch-content">
+                                <div class="arch-item">MHMP endpoint</div>
+                                <div class="arch-item">Praha 11 endpoint</div>
+                                <div class="arch-item">IPR endpoint</div>
+                                <div class="arch-item">OICT endpoint</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <ul class="feature-list" style="margin-top: 20px;">
+                        <li>Jedna instance LKOD pro všechny pražské organizace</li>
+                        <li>Společný veřejný katalog opendata.praha.eu</li>
+                        <li>Samostatné publikace organizací do NKOD</li>
+                        <li>Žádná vrstva pro správu více zřizovatelů</li>
+                    </ul>
+                </section>
+
+                <!-- Role -->
+                <section>
+                    <h3>Uživatelské role</h3>
+                    <div class="roles-grid">
+                        <div class="role-card editor">
+                            <h4>👩‍💼 Editor</h4>
+                            <span class="role-badge">Základní role</span>
+                            <ul>
+                                <li>Tvorba a úprava datových sad</li>
+                                <li>Nahrávání distribucí</li>
+                                <li>Publikace do NKOD</li>
+                            </ul>
+                        </div>
+
+                        <div class="role-card admin">
+                            <h4>👨‍💼 Admin</h4>
+                            <span class="role-badge">Správcovská role</span>
+                            <ul>
+                                <li>Správa uživatelů organizace</li>
+                                <li>Správa organizací</li>
+                                <li>Úprava údajů organizace</li>
+                                <li><strong>Nemůže</strong> vytvářet katalogy</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Omezení -->
+                <section>
+                    <h3>Klíčová omezení</h3>
+                    <div class="highlight-box">
+                        <ul style="margin-left: 20px; line-height: 2;">
+                            <li>❌ Není možné vytvářet nové zřizovatele</li>
+                            <li>❌ Není možné vytvářet samostatné katalogy</li>
+                            <li>❌ Veškerá správa probíhá manuálně v databázi</li>
+                            <li>❌ Žádná samoobsluha pro nové instituce</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Příklad současného katalogu -->
+                <section>
+                    <h3>Veřejný katalog</h3>
+                    <div class="screenshot-preview">
+                        <p style="margin-bottom: 15px;"><strong>opendata.praha.eu</strong> - Společný katalog všech pražských organizací</p>
+                        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.1);">
+                            <p style="color: #666; font-style: italic;">Jeden katalog zobrazující data všech organizací HMP</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- BUDOUCÍ STAV -->
+            <div class="column future">
+                <div class="column-header">
+                    <h2>🟠 Budoucí stav</h2>
+                    <span class="badge">Od roku 2026</span>
+                    <p style="margin-top: 15px; font-size: 1.1em;">Řešení pro více institucí</p>
+                </div>
+
+                <!-- Architektura -->
+                <section>
+                    <h3>Architektura</h3>
+                    <div class="architecture-diagram">
+                        <div class="arch-level superadmin">
+                            <h4>🔴 SuperAdmin (OICT)</h4>
+                            <div class="arch-content">
+                                <div class="arch-item">Správa zřizovatelů</div>
+                            </div>
+                        </div>
+
+                        <div class="arrow-down">↓</div>
+
+                        <div class="arch-level zrizovatel">
+                            <h4>🟦 Zřizovatelé (HMP, ČHMÚ, ...)</h4>
+                            <div class="arch-content">
+                                <div class="arch-item">Správa organizací</div>
+                                <div class="arch-item">Správa uživatelů</div>
+                                <div class="arch-item"><strong>✨ Vytvoření katalogu</strong></div>
+                            </div>
+                        </div>
+
+                        <div class="arrow-down">↓</div>
+
+                        <div class="arch-level organizace">
+                            <h4>🟩 Organizace</h4>
+                            <div class="arch-content">
+                                <div class="arch-item">MHMP</div>
+                                <div class="arch-item">ČHMÚ</div>
+                                <div class="arch-item">IPR Praha</div>
+                                <div class="arch-item">Další...</div>
+                            </div>
+                        </div>
+
+                        <div class="arrow-down">↓</div>
+
+                        <div class="arch-level nkod">
+                            <h4>📘 NKOD - Samostatné registrace</h4>
+                            <div class="arch-content">
+                                <div class="arch-item">HMP endpoints</div>
+                                <div class="arch-item">ČHMÚ endpoints</div>
+                                <div class="arch-item">Další endpoints</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <ul class="feature-list" style="margin-top: 20px;">
+                        <li class="new">SuperAdmin vrstva pro správu zřizovatelů</li>
+                        <li class="new">Každý zřizovatel může vytvořit vlastní katalog</li>
+                        <li class="new">Samoobslužné vytváření katalogů</li>
+                    </ul>
+                </section>
+
+                <!-- Role -->
+                <section>
+                    <h3>Uživatelské role</h3>
+                    <div class="roles-grid">
+                        <div class="role-card superadmin">
+                            <h4>🔧 SuperAdmin</h4>
+                            <span class="role-badge">Nejvyšší role</span>
+                            <ul>
+                                <li>Vytváření zřizovatelů</li>
+                                <li>Monitoring všech instancí</li>
+                            </ul>
+                        </div>
+
+                        <div class="role-card admin">
+                            <h4>👨‍💼 Admin Zřizovatele</h4>
+                            <span class="role-badge">Správcovská role</span>
+                            <ul>
+                                <li>Správa uživatelů a organizací</li>
+                                <li><strong>✨ Vytvoření vlastního katalogu</strong></li>
+                                <li><strong>✨ WYSIWYG editor katalogu</strong></li>
+                                <li>Konfigurace brandingu</li>
+                            </ul>
+                        </div>
+
+                        <div class="role-card editor">
+                            <h4>👩‍💼 Editor</h4>
+                            <span class="role-badge">Základní role</span>
+                            <ul>
+                                <li>Tvorba a úprava datových sad</li>
+                                <li>Nahrávání distribucí</li>
+                                <li>Publikace do NKOD</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tvorba katalogu -->
+                <section>
+                    <h3>✨ Nové funkce</h3>
+                    <div class="catalog-creation">
+                        <div class="catalog-step">
+                            <h5>1️⃣ SuperAdmin vytvoří zřizovatele</h5>
+                            <p>SuperAdmin v administraci LKOD vytvoří nového zřizovatele (např. Město Zlín)</p>
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li>Název zřizovatele</li>
+                                <li>IČO</li>
+                                <li>Kontaktní údaje</li>
+                            </ul>
+                        </div>
+
+                        <div class="catalog-step">
+                            <h5>2️⃣ Admin vytvoří vlastní katalog</h5>
+                            <p><strong>WYSIWYG editor</strong> s konfigurací defaultní šablony:</p>
+                            <ul style="margin-left: 20px; margin-top: 10px; line-height: 2;">
+                                <li>🎨 Logo organizace</li>
+                                <li>🖼️ Fotka na pozadí</li>
+                                <li>📝 Název katalogu</li>
+                                <li>🌐 Doména (např. lkod.cz/zlin)</li>
+                                <li>📄 Úvodní text</li>
+                                <li>🔗 Patička s kontakty</li>
+                                <li>🎨 Barevné schéma</li>
+                            </ul>
+                            <div class="wysiwyg-preview">
+                                <p>📐 WYSIWYG editor s live preview</p>
+                                <p style="font-size: 0.9em; margin-top: 10px;">Admin vidí změny v reálném čase při úpravě šablony</p>
+                            </div>
+                        </div>
+
+                        <div class="catalog-step">
+                            <h5>✅ Výsledek</h5>
+                            <p>Vytvoří se samostatný veřejný katalog</p>
+                            <div style="background: white; padding: 15px; border-radius: 8px; margin-top: 10px; border: 2px solid #28a745;">
+                                <p style="color: #28a745; font-weight: bold; text-align: center;">lkod.cz/zlin</p>
+                                <p style="color: #666; font-size: 0.9em; text-align: center; margin-top: 5px;">Otevřená data města Zlín</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 Operátor ICT | LKOD - Lokální katalog otevřených dat</p>
+            <p style="margin-top: 10px; opacity: 0.8;">Roadmapa evoluce na LKOD as a Service</p>
+        </footer>
+    </div>
+</body>
+</html>
